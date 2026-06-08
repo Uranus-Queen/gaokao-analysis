@@ -1,16 +1,17 @@
 import { Hono } from 'hono';
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// In Vercel Serverless, cwd is /var/task which is the project root
+const root = process.cwd();
+
 const app = new Hono();
 
 // API: get available years
 app.get('/api/years', (c) => {
   const years = [];
   for (let y = 2014; y <= 2025; y++) {
-    const path = join(__dirname, '..', 'data', `${y}.json`);
+    const path = join(root, 'data', `${y}.json`);
     if (existsSync(path)) years.push(y);
   }
   return c.json(years);
@@ -19,7 +20,7 @@ app.get('/api/years', (c) => {
 // API: get data for a specific year
 app.get('/api/data/:year', (c) => {
   const year = c.req.param('year');
-  const path = join(__dirname, '..', 'data', `${year}.json`);
+  const path = join(root, 'data', `${year}.json`);
   if (!existsSync(path)) return c.json({ error: 'Year not found' }, 404);
   const data = readFileSync(path, 'utf8');
   c.header('Content-Type', 'application/json');
@@ -29,7 +30,7 @@ app.get('/api/data/:year', (c) => {
 
 // Main page
 app.get('/', (c) => {
-  const html = readFileSync(join(__dirname, 'index.html'), 'utf8');
+  const html = readFileSync(join(root, 'src', 'index.html'), 'utf8');
   return c.html(html);
 });
 
