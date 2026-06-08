@@ -241,15 +241,18 @@ body::after{content:'';position:fixed;bottom:-20%;right:-8%;width:50%;height:50%
 
 /* Mobile controls */
 @media(max-width:640px){
-  .controls{gap:4px;flex-wrap:wrap}
-  .controls label{font-size:12px;width:100%;margin-top:4px}
+  .controls{gap:6px;flex-wrap:wrap}
+  .controls label{font-size:14px;width:100%;margin-top:6px}
   .controls label:first-child{margin-top:0}
-  .controls select,.controls button:not(.btn-multi){min-height:44px;font-size:13px;padding:8px 12px}
-  .dropdown-wrap .dropdown-selected{min-height:44px;font-size:13px;padding:8px 12px;padding-right:32px;max-width:160px}
+  .controls select,.controls button:not(.btn-multi){min-height:44px;font-size:15px;padding:10px 14px}
+  .dropdown-wrap .dropdown-selected{min-height:44px;font-size:15px;padding:10px 14px;padding-right:32px;max-width:180px}
   .dropdown-menu{max-height:240px}
-  .controls .btn-group button{padding:8px 14px;font-size:13px;min-height:44px}
-  .controls .btn-multi{min-height:44px;font-size:13px;padding:8px 14px}
-  .yr-selector button{padding:6px 10px;font-size:12px;min-height:36px}
+  .dropdown-menu li{font-size:15px;padding:12px 14px}
+  .controls .btn-group button{padding:10px 16px;font-size:15px;min-height:44px}
+  .controls .btn-multi{min-height:44px;font-size:15px;padding:10px 16px}
+  .yr-selector button{padding:8px 12px;font-size:14px;min-height:40px}
+  .chart-box h3{font-size:14px;margin-bottom:8px}
+  .footer{font-size:15px;padding:16px}
 }
 
 /* Loading */
