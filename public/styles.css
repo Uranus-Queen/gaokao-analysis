@@ -251,21 +251,21 @@ body::after{content:'';position:fixed;bottom:-20%;right:-8%;width:50%;height:50%
 ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.18)}
 
 /* Clock */
-.header-right{position:absolute;right:clamp(22px,3.2vw,38px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-end;gap:clamp(10px,1vw,16px);z-index:10}
-.clock-block{display:flex;flex-direction:column;gap:clamp(8px,1vw,14px);perspective:1200px;position:relative}
+.header-right{position:absolute;right:clamp(16px,2.5vw,32px);top:clamp(16px,2.5vw,32px);transform:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;z-index:10}
+.clock-block{display:flex;flex-direction:column;gap:4px;perspective:1200px;position:relative}
 .clock-block::after{content:'';position:absolute;top:-25%;left:-15%;right:-15%;bottom:-25%;background:radial-gradient(ellipse at center,rgba(0,113,227,0.06),transparent 70%);pointer-events:none;z-index:-1;animation:clockGlow 5s ease-in-out infinite alternate}
 @keyframes clockGlow{0%{opacity:.5;transform:scale(1)}100%{opacity:1;transform:scale(1.06)}}
-.clock-row{display:flex;align-items:center;gap:5px}
-.clock-row .cl{font-size:clamp(11px,1.3vw,15px);color:#86868b;font-weight:600;margin-right:clamp(8px,1vw,14px);white-space:nowrap;letter-spacing:0.04em}
-.fc{position:relative;display:inline-block;width:clamp(22px,3.2vw,42px);height:clamp(28px,4vw,54px);border-radius:5px;box-shadow:0 4px 14px rgba(0,0,0,0.35),0 1px 3px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.06);vertical-align:middle;transform-style:preserve-3d}
-.fc-u,.fc-b{position:absolute;top:0;left:0;right:0;height:50%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;background:#1c1c32;font-family:'Times New Roman','Times','Georgia',serif;font-weight:700;font-size:clamp(28px,3.5vw,52px);color:#f0f0f5;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 1px 4px rgba(0,0,0,0.25);backface-visibility:hidden;-webkit-backface-visibility:hidden;border-bottom:1px solid #000;box-shadow:inset 0 5px 8px rgba(0,0,0,0.1);border-radius:5px 5px 0 0;letter-spacing:-0.02em}
+.clock-row{display:flex;align-items:center;gap:3px}
+.clock-row .cl{font-size:10px;color:#86868b;font-weight:600;margin-right:6px;white-space:nowrap;letter-spacing:0.04em}
+.fc{position:relative;display:inline-block;width:clamp(16px,1.8vw,26px);height:clamp(20px,2.2vw,34px);border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,0.35),0 1px 2px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.06);vertical-align:middle;transform-style:preserve-3d}
+.fc-u,.fc-b{position:absolute;top:0;left:0;right:0;height:50%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;background:#1c1c32;font-family:'Times New Roman','Times','Georgia',serif;font-weight:700;font-size:clamp(18px,2vw,30px);color:#f0f0f5;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,0.25);backface-visibility:hidden;-webkit-backface-visibility:hidden;border-bottom:1px solid #000;box-shadow:inset 0 3px 5px rgba(0,0,0,0.1);border-radius:3px 3px 0 0;letter-spacing:-0.02em}
 .fc-u{z-index:3;transform-origin:bottom center}
 .fc-b{z-index:1}
-.fc-d{position:absolute;bottom:0;left:0;right:0;height:50%;overflow:hidden;display:flex;justify-content:center;align-items:flex-end;background:#0d0d1a;font-family:'Times New Roman','Times','Georgia',serif;font-weight:700;font-size:clamp(28px,3.5vw,52px);color:#f0f0f5;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 1px 4px rgba(0,0,0,0.25);box-shadow:inset 0 -3px 6px rgba(0,0,0,0.12);border-radius:0 0 5px 5px;letter-spacing:-0.02em}
+.fc-d{position:absolute;bottom:0;left:0;right:0;height:50%;overflow:hidden;display:flex;justify-content:center;align-items:flex-end;background:#0d0d1a;font-family:'Times New Roman','Times','Georgia',serif;font-weight:700;font-size:clamp(18px,2vw,30px);color:#f0f0f5;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,0.25);box-shadow:inset 0 -2px 4px rgba(0,0,0,0.12);border-radius:0 0 3px 3px;letter-spacing:-0.02em}
 .fc.flipping .fc-u{animation:flipDown .22s cubic-bezier(0.55,0,0.75,0.25) forwards}
 @keyframes flipDown{0%{transform:rotateX(0deg)}100%{transform:rotateX(-90deg)}}
-.fs{font-size:clamp(14px,2vw,26px);color:#1d1d1f;font-weight:700;font-family:'Courier New',monospace;line-height:1;padding:0 2px;text-shadow:0 1px 2px rgba(0,0,0,0.04)}
-.fl{font-size:clamp(11px,1.4vw,17px);color:#86868b;margin:0 clamp(4px,0.6vw,10px);font-weight:600;letter-spacing:0.03em}
+.fs{font-size:clamp(10px,1.2vw,16px);color:#1d1d1f;font-weight:700;font-family:'Courier New',monospace;line-height:1;padding:0 1px;text-shadow:0 1px 2px rgba(0,0,0,0.04)}
+.fl{font-size:9px;color:#86868b;margin:0 3px;font-weight:600;letter-spacing:0.03em}
 
 /* Footer */
 .footer{text-align:center;padding:clamp(18px,2.8vw,36px) clamp(12px,1.8vw,24px);color:#86868b;font-size:clamp(14px,1.6vw,18px);font-family:'STKaiti','KaiTi','Kai',serif;letter-spacing:0.1em;opacity:.8;border-top:1px solid rgba(0,0,0,0.04);margin-top:clamp(4px,0.6vw,8px)}
