@@ -1,0 +1,10 @@
+{
+  "buildCommand": null,
+  "outputDirectory": null,
+  "routes": [
+    { "src": "/public/(.*)", "dest": "/public/$1" },
+    { "src": "/data/(.*)", "dest": "/data/$1" },
+    { "src": "/api/(.*)", "dest": "/api" },
+    { "src": "/(.*)", "dest": "/api" }
+  ]
+}
