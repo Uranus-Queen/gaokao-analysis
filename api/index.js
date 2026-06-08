@@ -1,11 +1,43 @@
 import { Hono } from 'hono';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, extname } from 'path';
 
-// In Vercel Serverless, cwd is /var/task which is the project root
 const root = process.cwd();
-
 const app = new Hono();
+
+// MIME types for static files
+const MIME = {
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.json': 'application/json'
+};
+
+// Serve static files from /public/ and /data/
+app.get('/public/:file', (c) => {
+  const file = c.req.param('file');
+  const filePath = join(root, 'public', file);
+  if (!existsSync(filePath)) return c.notFound();
+  const ext = extname(filePath);
+  const mime = MIME[ext] || 'application/octet-stream';
+  const content = readFileSync(filePath);
+  c.header('Content-Type', mime);
+  c.header('Cache-Control', 'public, max-age=86400');
+  return c.body(content);
+});
+
+app.get('/data/:file', (c) => {
+  const file = c.req.param('file');
+  const filePath = join(root, 'data', file);
+  if (!existsSync(filePath)) return c.notFound();
+  const data = readFileSync(filePath, 'utf8');
+  c.header('Content-Type', 'application/json');
+  c.header('Cache-Control', 'public, max-age=3600');
+  return c.body(data);
+});
 
 // API: get available years
 app.get('/api/years', (c) => {
