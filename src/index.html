@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>2014-2025年高考录取多维分析系统</title>
+<link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+<div id="loading"><div style="width:36px;height:36px;border:3px solid #e8e8ed;border-top:3px solid #0071e3;border-radius:50%;animation:spin .7s linear infinite"></div>
+<div style="color:#86868b;font-size:14px;font-family:-apple-system,sans-serif">加载数据中...</div></div>
+<div id="captureArea">
+<div class="header">
+<div class="header-top">
+<img id="logo" src="/public/logo.png" alt="" style="height:100px;width:auto">
+<div>
+<div style="font-size:clamp(14px,1.8vw,22px);font-family:'方正魏碑_GBK','FZWeiBei-S03S','魏碑','KaiTi',serif;color:#86868b;letter-spacing:0.06em;line-height:1.4">兰州市西固区教育考试服务中心高考志愿服务总队</div>
+<h1>2014-2025年高考录取多维分析</h1>
+</div>
+</div>
+<div class="header-right"><div class="clock-block" id="clockBlock"></div></div>
+<div class="yr-selector" id="yearSelector">
+<button data-year="2014">2014</button>
+<button data-year="2015">2015</button>
+<button data-year="2016">2016</button>
+<button data-year="2017">2017</button>
+<button data-year="2018">2018</button>
+<button data-year="2019">2019</button>
+<button data-year="2020">2020</button>
+<button data-year="2021">2021</button>
+<button data-year="2022">2022</button>
+<button data-year="2023">2023</button>
+<button data-year="2024">2024</button>
+<button data-year="2025" class="active">2025</button>
+</div>
+<div class="controls">
+<label>报考点：</label>
+<select id="schoolSelect">
+<option value="全部">全区（全部学校）</option>
+</select>
+<label>视图：</label>
+<div class="btn-group" id="viewGroup">
+<button class="active" data-view="院校层次">院校层次</button>
+<button data-view="专业大类">专业大类</button>
+</div>
+<label>导出：</label>
+<button class="btn-export" data-scale="2">标准清晰</button>
+<button class="btn-export" data-scale="4">4K</button>
+<label>多选：</label>
+<button class="btn-multi" id="btnMulti">对比</button>
+</div>
+</div>
+<div class="dgrid dgrid-main">
+<div class="chart-box">
+<h3 id="sankeyTitle">桑基图</h3>
+<div id="chartSankey"></div>
+</div>
+<div class="dgrid dgrid-full">
+<div class="chart-box">
+<h3>院校层次</h3>
+<div class="chart-pie" id="chartPieLevel"></div>
+</div>
+<div class="chart-box">
+<h3>首选科目</h3>
+<div class="chart-pie" id="chartPieSubject"></div>
+</div>
+</div>
+</div>
+<div class="dgrid dgrid-full">
+<div class="chart-box">
+<h3 id="barTitle">分布柱状图</h3>
+<div class="chart-bar" id="chartBar"></div>
+</div>
+</div>
+<div class="dgrid dgrid-half">
+<div class="chart-box">
+<h3>录取院校 Top 30</h3>
+<div class="chart-bar" id="chartCollege"></div>
+</div>
+<div class="chart-box">
+<h3>录取专业 Top 30</h3>
+<div class="chart-bar" id="chartMajor"></div>
+</div>
+</div>
+<div class="dgrid dgrid-full">
+<div class="chart-box">
+<h3>院校 × 专业 热图（物理）</h3>
+<div id="chartHeatmapWL"></div>
+</div>
+<div class="chart-box">
+<h3>院校 × 专业 热图（历史）</h3>
+<div id="chartHeatmapLS"></div>
+</div>
+</div>
+<div class="dgrid dgrid-full chart-compare" id="compareSection">
+<div class="chart-box">
+<h3 id="compareTitle">多年度录取对比</h3>
+<div id="chartCompare"></div>
+</div>
+</div>
+<div class="footer">
+<div>兰州市西固区教育考试服务中心高考志愿服务总队</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+<script defer>
+(function(){
+var ld=document.getElementById("loading");
+try{
+var COL = {"物理":"#3498db","历史":"#e74c3c","艺体":"#9b59b6","985":"#c0392b","211":"#e67e22","双一流":"#27ae60","普通本科":"#2980b9","专科/高职":"#8e44ad"};
+var CAT = {01:"#1abc9c",02:"#2ecc71",03:"#3498db",04:"#9b59b6",05:"#e74c3c",06:"#f39c12",07:"#16a085",08:"#e74c3c",09:"#27ae60",10:"#c0392b",11:"#7f8c8d",12:"#f39c12",13:"#9b59b6",00:"#95a5a6"};
+var YEARS = ["2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"];
+var curYear = "2025";
+var multiMode = false;
+var DATA = {};
+var chartsInitialized = false;
+
+// Lazy init charts
+var SH, P1, P2, BR, CL, MJ, HM_WL, HM_LS, CP;
+
+function initCharts() {
+  if (chartsInitialized) return;
+  SH = echarts.init(document.getElementById('chartSankey'));
+  P1 = echarts.init(document.getElementById('chartPieLevel'));
+  P2 = echarts.init(document.getElementById('chartPieSubject'));
+  BR = echarts.init(document.getElementById('chartBar'));
+  CL = echarts.init(document.getElementById('chartCollege'));
+  MJ = echarts.init(document.getElementById('chartMajor'));
+  HM_WL = echarts.init(document.getElementById('chartHeatmapWL'));
+  HM_LS = echarts.init(document.getElementById('chartHeatmapLS'));
+  CP = echarts.init(document.getElementById('chartCompare'));
+  chartsInitialized = true;
+}
+
+// Fetch data for a year
+async function fetchYear(year) {
+  if (DATA[year]) return DATA[year];
+  const resp = await fetch('/api/data/' + year);
+  const data = await resp.json();
+  DATA[year] = data;
+  return data;
+}
+
+// Prefetch adjacent years
+function prefetchYears(year) {
+  const idx = YEARS.indexOf(String(year));
+  [idx-1, idx+1].forEach(i => {
+    if (i >= 0 && i < YEARS.length) fetchYear(YEARS[i]);
+  });
+}
+
+function nc(n) {
+  if (n in COL) return COL[n];
+  var m = n.match(/^(\d+)_/);
+  return m && CAT[m[1]] ? CAT[m[1]] : "#34495e";
+}
+
+async function switchYear(year) {
+  curYear = year;
+  document.querySelectorAll("#yearSelector button[data-year]").forEach(function(b) {
+    b.classList.toggle("active", b.dataset.year === year);
+  });
+  
+  var data = await fetchYear(year);
+  var schools = {};
+  data.forEach(function(r) { schools[r.l1] = 1; });
+  var sel = document.getElementById("schoolSelect");
+  var prevVal = sel.value;
+  sel.innerHTML = '<option value="全部">全区（全部学校）</option>';
+  Object.keys(schools).sort().forEach(function(s) {
+    sel.innerHTML += '<option value="' + s + '">' + s + '</option>';
+  });
+  if (prevVal !== "全部" && schools[prevVal]) sel.value = prevVal;
+  else sel.value = "全部";
+  
+  initCharts();
+  update();
+  prefetchYears(year);
+}
+
+function hmOptions(hdata, cList, mList, maxVal, view) {
+  var hmColors = view === "院校层次" ? ['#fff5f0','#fee0d2','#fc9272','#de2d26'] : ['#f0f9e8','#bae4bc','#2ca25f','#005824'];
+  return {
+    tooltip: { position: 'top', triggerOn: 'mousemove|click', backgroundColor:'rgba(255,255,255,0.85)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1, textStyle:{color:'#1d1d1f'}, formatter: function(p) { return cList[p.data[0]] + ' → ' + mList[p.data[1]] + '<br/>' + p.data[2] + '人'; } },
+    animationDuration: 800, animationEasing: 'cubicOut',
+    grid: { left: 150, right: 30, top: 20, bottom: 140 },
+    xAxis: { type: 'category', data: cList, axisLabel: { rotate: 35, fontSize: (window.innerWidth<480?8:11) }, splitArea: { show: true } },
+    yAxis: { type: 'category', data: mList, axisLabel: { fontSize: (window.innerWidth<480?8:11) }, splitArea: { show: true } },
+    visualMap: { min: 0, max: maxVal, calculable: true, orient: 'horizontal', left: 'center', bottom: 10, inRange: { color: hmColors } },
+    series: [{ type: 'heatmap', data: hdata, label: { show: false },
+      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,0.35)' } },
+      blur: { itemStyle: { opacity: 0.5 } } }]
+  };
+}
+
+function buildHeatmap(fdata, view) {
+  var ca = {}; fdata.forEach(function(r) { ca[r.c] = (ca[r.c] || 0) + 1; });
+  var ma = {}; fdata.forEach(function(r) { ma[r.m] = (ma[r.m] || 0) + 1; });
+  var topC = 30, topM = 20;
+  var cList = Object.entries(ca).sort(function(a,b){return b[1]-a[1]}).slice(0,topC).map(function(x){return x[0];});
+  var mList = Object.entries(ma).sort(function(a,b){return b[1]-a[1]}).slice(0,topM).map(function(x){return x[0];});
+  var hmData = [];
+  var cmMap = {};
+  fdata.forEach(function(r) { cmMap[r.c + '|' + r.m] = (cmMap[r.c + '|' + r.m] || 0) + 1; });
+  cList.forEach(function(c, ci) {
+    mList.forEach(function(m, mi) {
+      hmData.push([ci, mi, cmMap[c + '|' + m] || 0]);
+    });
+  });
+  var maxVal = hmData.reduce(function(m, d){return Math.max(m, d[2]);}, 1);
+  return { data: hmData, colleges: cList, majors: mList, max: maxVal };
+}
+
+function update() {
+  if (!DATA[curYear]) return;
+  var data = DATA[curYear];
+  var sel = document.getElementById("schoolSelect").value;
+  var view = document.querySelector("#viewGroup .active").dataset.view;
+  var fdata = sel === "全部" ? data : data.filter(function(r) { return r.l1 === sel; });
+  var isAll = sel === "全部";
+  var keys = isAll ? ["l1","l2"] : ["l2"];
+  keys.push(view === "院校层次" ? "l3" : "l4");
+
+  var agg = {};
+  fdata.forEach(function(r) {
+    var k = keys.map(function(kk) { return r[kk]; }).join("|");
+    agg[k] = (agg[k] || 0) + 1;
+  });
+
+  var L = [[],[],[]];
+  Object.keys(agg).forEach(function(k) {
+    var p = k.split("|");
+    p.forEach(function(v,i) { if (L[i].indexOf(v) === -1) L[i].push(v); });
+  });
+
+  var subjOrder = ["物理","历史","艺体"];
+  var lvOrder = ["985","211","双一流","普通本科","专科/高职"];
+  var mjOrder = ["01_哲学","02_经济学","03_法学","04_教育学","05_文学","06_历史学","07_理学","08_工学","09_农学","10_医学","11_军事学","12_管理学","13_艺术学","00_预科"];
+
+  if (isAll) { L[0].sort(); L[1] = subjOrder.filter(function(x) { return L[1].indexOf(x) !== -1; }); }
+  else { L[0] = subjOrder.filter(function(x) { return L[0].indexOf(x) !== -1; }); }
+  L[2] = (view === "院校层次" ? lvOrder : mjOrder).filter(function(x) { return L[2].indexOf(x) !== -1; });
+
+  var lmap = {};
+  Object.entries(agg).forEach(function(e) {
+    var p = e[0].split("|"), v = e[1];
+    for (var i = 0; i < p.length - 1; i++) {
+      var lk = p[i] + "->" + p[i+1];
+      lmap[lk] = (lmap[lk] || 0) + v;
+    }
+  });
+
+  var nd = [], nl = [];
+  L.forEach(function(lv) { lv.forEach(function(n) { nd.push({name:n, itemStyle:{color:nc(n)}}); }); });
+  for (var k in lmap) {
+    var p = k.split("->");
+    nl.push({source: p[0], target: p[1], value: lmap[k]});
+  }
+
+  var prefix = sel === "全部" ? "全区" : sel;
+  var suffix = view === "院校层次" ? "院校层次" : "专业大类";
+  document.getElementById("sankeyTitle").textContent = curYear + "年 " + prefix + " → 首选科目 → " + suffix;
+
+  SH.setOption({
+    tooltip: { trigger: 'item', triggerOn: 'mousemove|click', backgroundColor:'rgba(255,255,255,0.85)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1, textStyle:{color:'#1d1d1f'}, formatter: function(p) {
+      if (p.dataType === 'edge') return p.data.source + ' → ' + p.data.target + '<br/>' + p.data.value + '人';
+      return p.name;
+    }},
+    animationDuration: 800, animationEasing: 'cubicOut',
+    series: [{
+      type: 'sankey', emphasis: { focus: 'adjacency', lineStyle: { opacity: 0.5 } }, blur: { lineStyle: { opacity: 0.05 } },
+      nodeWidth: 22, nodeGap: 12,
+      data: nd, links: nl,
+      lineStyle: { color: 'gradient', opacity: 0.2 }
+    }]
+  }, true);
+
+  // Pie: level
+  var la = {}; fdata.forEach(function(r) { la[r.l3] = (la[r.l3] || 0) + 1; });
+  var ld = Object.entries(la).sort(function(a,b) { return b[1]-a[1]; });
+  P1.setOption({
+    tooltip: { trigger: 'item', triggerOn: 'mousemove|click', backgroundColor:'rgba(255,255,255,0.85)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1, textStyle:{color:'#1d1d1f'}, formatter: '{b}: {c}人 ({d}%)' },
+    animationDuration: 800, animationEasing: 'cubicOut',
+    legend: { data: ld.map(function(x){return x[0];}), bottom: 0, left: 'center', icon: 'circle', itemWidth: 8, itemHeight: 8, textStyle: {fontSize: 10} },
+    series: [{ type: 'pie', radius: ['22%','58%'], center: ['50%','40%'],
+      avoidLabelOverlap: true,
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' }, label: { show: true } },
+      blur: { itemStyle: { opacity: 0.4 } },
+      label: { show: true, formatter: function(p){ return p.percent.toFixed(2)+'%'; }, fontSize: 11 },
+      data: ld.map(function(x) { return {name:x[0], value:x[1], itemStyle:{color: COL[x[0]]||"#95a5a6"}}; }) }]
+  }, true);
+
+  // Pie: subject
+  var sa = {}; fdata.forEach(function(r) { sa[r.l2] = (sa[r.l2] || 0) + 1; });
+  var sd = Object.entries(sa).sort(function(a,b) { return b[1]-a[1]; });
+  P2.setOption({
+    tooltip: { trigger: 'item', triggerOn: 'mousemove|click', backgroundColor:'rgba(255,255,255,0.85)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1, textStyle:{color:'#1d1d1f'}, formatter: '{b}: {c}人 ({d}%)' },
+    animationDuration: 800, animationEasing: 'cubicOut',
+    legend: { data: sd.map(function(x){return x[0];}), bottom: 0, left: 'center', icon: 'circle', itemWidth: 8, itemHeight: 8, textStyle: {fontSize: 10} },
+    series: [{ type: 'pie', radius: ['22%','58%'], center: ['50%','40%'],
+      avoidLabelOverlap: true,
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' }, label: { show: true } },
+      blur: { itemStyle: { opacity: 0.4 } },
+      label: { show: true, formatter: function(p){ return p.percent.toFixed(2)+'%'; }, fontSize: 11 },
+      data: sd.map(function(x) { return {name:x[0], value:x[1], itemStyle:{color: COL[x[0]]||"#95a5a6"}}; }) }]
+  }, true);
+
+  // Bar
+  var ba = {}; var bk = view === "院校层次" ? "l3" : "l4";
+  fdata.forEach(function(r) { ba[r[bk]] = (ba[r[bk]] || 0) + 1; });
+  var bd = Object.entries(ba).sort(function(a,b) { return b[1]-a[1]; });
+  document.getElementById("barTitle").textContent = curYear + "年 " + prefix + " — " + suffix + "分布";
+  var bc = bd.map(function(x) {
+    if (view === "院校层次") return COL[x[0]] || "#95a5a6";
+    var m = x[0].match(/^(\d+)_/);
+    return m ? (CAT[m[1]] || "#95a5a6") : "#95a5a6";
+  });
+  BR.setOption({
+    tooltip: { trigger: 'axis', triggerOn: 'mousemove|click', axisPointer: {type:'shadow'}, backgroundColor:'rgba(255,255,255,0.85)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1, textStyle:{color:'#1d1d1f'} },
+    animationDuration: 800, animationEasing: 'cubicOut',
+    grid: { left: 80, right: 10, top: 10, bottom: 50 },
+    xAxis: { type: 'category', data: bd.map(function(x){return x[0];}), axisLabel: {rotate:40, fontSize:11} },
+    yAxis: { type: 'value' },
+    series: [{ type: 'bar', data: bd.map(function(x,i){return {value:x[1], itemStyle:{color:bc[i]}};}), barGap:'30%',
+      emphasis: { itemStyle: { shadowBlur: 8, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.15)' } } }]
+  }, true);
+
+  // College ranking
+  var ca = {}; fdata.forEach(function(r) { ca[r.c] = (ca[r.c] || 0) + 1; });
+  var cd = Object.entries(ca).sort(function(a,b) { return b[1]-a[1]; }).slice(0, 30);
+  CL.setOption({
+    tooltip: { trigger: 'axis', triggerOn: 'mousemove|click', axisPointer: {type:'shadow'}, backgroundColor:'rgba(255,255,255,0.85)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1, textStyle:{color:'#1d1d1f'}, formatter: function(ps) { var p=ps[0]; return p.name + '<br/>录取: ' + p.value + '人'; } },
+    animationDuration: 800, animationEasing: 'cubicOut',
+    grid: { left: 180, right: 20, top: 10, bottom: 30 },
+    yAxis: { type: 'category', data: cd.map(function(x){return x[0];}).reverse(), axisLabel: {fontSize: 10, width: 160, overflow: 'truncate'} },
+    xAxis: { type: 'value', name: '人数' },
+    series: [{ type: 'bar', data: cd.map(function(x){return x[1];}).reverse(), barGap:'30%', itemStyle: {color: '#2980b9'},
+      emphasis: { itemStyle: { shadowBlur: 8, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.15)' } } }]
+  }, true);
+
+  // Major ranking
+  var ma = {}; fdata.forEach(function(r) { ma[r.m] = (ma[r.m] || 0) + 1; });
+  var md = Object.entries(ma).sort(function(a,b) { return b[1]-a[1]; }).slice(0, 30);
+  MJ.setOption({
+    tooltip: { trigger: 'axis', triggerOn: 'mousemove|click', axisPointer: {type:'shadow'}, backgroundColor:'rgba(255,255,255,0.85)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1, textStyle:{color:'#1d1d1f'}, formatter: function(ps) { var p=ps[0]; return p.name + '<br/>录取: ' + p.value + '人'; } },
+    animationDuration: 800, animationEasing: 'cubicOut',
+    grid: { left: 160, right: 20, top: 10, bottom: 30 },
+    yAxis: { type: 'category', data: md.map(function(x){return x[0];}).reverse(), axisLabel: {fontSize: 10, width: 140, overflow: 'truncate'} },
+    xAxis: { type: 'value', name: '人数' },
+    series: [{ type: 'bar', data: md.map(function(x){return x[1];}).reverse(), barGap:'30%', itemStyle: {color: '#27ae60'},
+      emphasis: { itemStyle: { shadowBlur: 8, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.15)' } } }]
+  }, true);
+
+  // Heatmap WL
+  var wlData = fdata.filter(function(r){return r.l2 === "物理";});
+  var hmWL = wlData.length > 0 ? buildHeatmap(wlData, view) : null;
+  if (hmWL) {
+    HM_WL.setOption(hmOptions(hmWL.data, hmWL.colleges, hmWL.majors, hmWL.max, view), true);
+  } else {
+    HM_WL.clear();
+  }
+
+  // Heatmap LS
+  var lsData = fdata.filter(function(r){return r.l2 === "历史";});
+  var hmLS = lsData.length > 0 ? buildHeatmap(lsData, view) : null;
+  if (hmLS) {
+    HM_LS.setOption(hmOptions(hmLS.data, hmLS.colleges, hmLS.majors, hmLS.max, view), true);
+  } else {
+    HM_LS.clear();
+  }
+}
+
+// Build multi-year comparison line chart
+async function buildCompareChart() {
+  var selYears = [];
+  document.querySelectorAll("#yearSelector button.multi-sel").forEach(function(b) {
+    selYears.push(b.dataset.year);
+  });
+  if (selYears.length < 2) {
+    CP.clear();
+    document.getElementById("compareTitle").textContent = "请选择至少两个年份进行对比";
+    return;
+  }
+  selYears.sort();
+  var selSchool = document.getElementById("schoolSelect").value;
+  var view = document.querySelector("#viewGroup .active").dataset.view;
+  var prefix = selSchool === "全部" ? "全区" : selSchool;
+  document.getElementById("compareTitle").textContent = prefix + " " + selYears.join(" / ") + " 录取对比";
+  
+  var rawData = [], globalAgg = {};
+  for (var y of selYears) {
+    var allData = await fetchYear(y);
+    var d = selSchool === "全部" ? allData : allData.filter(function(r) { return r.l1 === selSchool; });
+    var key = view === "院校层次" ? "l3" : "l4";
+    var agg = {};
+    d.forEach(function(r) { agg[r[key]] = (agg[r[key]] || 0) + 1; });
+    rawData.push({ year: y, agg: agg });
+    Object.keys(agg).forEach(function(k) { globalAgg[k] = (globalAgg[k] || 0) + agg[k]; });
+  }
+  
+  var seriesOrder = [];
+  if (view === "院校层次") {
+    var lvOrder = ["985","211","双一流","普通本科","专科/高职"];
+    seriesOrder = lvOrder.filter(function(l) { return globalAgg.hasOwnProperty(l); });
+  } else {
+    var sorted = Object.entries(globalAgg).sort(function(a,b){return b[1]-a[1];});
+    seriesOrder = sorted.slice(0, 5).map(function(x){return x[0];});
+  }
+  var totals = [], seriesData = {};
+  seriesOrder.forEach(function(cat) { seriesData[cat] = []; });
+  rawData.forEach(function(rd) {
+    totals.push(Object.values(rd.agg).reduce(function(s,v){return s+v;}, 0));
+    seriesOrder.forEach(function(cat) { seriesData[cat].push(rd.agg[cat] || 0); });
+  });
+  var series = [];
+  series.push({
+    name: "总人数", type: "line", data: totals,
+    lineStyle: { width: 3, color: "#1d1d1f", type: "dashed" },
+    itemStyle: { color: "#1d1d1f" },
+    symbol: "diamond", symbolSize: 8, z: 1
+  });
+  seriesOrder.forEach(function(cat) {
+    var lineColor = view === "院校层次" ? (COL[cat] || "#95a5a6") : nc(cat);
+    series.push({
+      name: cat, type: "line", data: seriesData[cat],
+      lineStyle: { width: 2, color: lineColor },
+      itemStyle: { color: lineColor },
+      symbol: "circle", symbolSize: 6, z: 2
+    });
+  });
+  CP.setOption({
+    tooltip: {
+      trigger: "axis", triggerOn: "mousemove|click",
+      backgroundColor: "rgba(255,255,255,0.85)",
+      borderColor: "rgba(255,255,255,0.3)", borderWidth: 1,
+      textStyle: { color: "#1d1d1f" }
+    },
+    animationDuration: 800, animationEasing: "cubicOut",
+    legend: {
+      data: ["总人数"].concat(seriesOrder),
+      bottom: 0, left: "center", icon: "circle",
+      itemWidth: 10, itemHeight: 10,
+      textStyle: { fontSize: 11 }
+    },
+    grid: { left: 80, right: 20, top: 20, bottom: 50 },
+    xAxis: {
+      type: "category", data: selYears,
+      axisLabel: { fontSize: 12, fontWeight: 500 }
+    },
+    yAxis: { type: "value" },
+    series: series
+  }, true);
+  CP.resize();
+}
+
+// Year selector
+document.querySelectorAll("#yearSelector button[data-year]").forEach(function(b) {
+  b.addEventListener("click", function() {
+    if (multiMode) {
+      this.classList.toggle("multi-sel");
+      buildCompareChart();
+    } else {
+      switchYear(this.dataset.year);
+    }
+  });
+});
+
+// Multi-select toggle
+document.getElementById("btnMulti").addEventListener("click", function() {
+  multiMode = !multiMode;
+  this.classList.toggle("active");
+  document.getElementById("compareSection").classList.toggle("show", multiMode);
+  setTimeout(function(){ if (chartsInitialized) CP.resize(); }, 100);
+  if (multiMode) {
+    document.querySelectorAll("#yearSelector button[data-year]").forEach(function(b) {
+      b.classList.remove("active","multi-sel");
+    });
+    document.querySelector('#yearSelector button[data-year="2025"]').classList.add("multi-sel");
+    buildCompareChart();
+  } else {
+    document.querySelectorAll("#yearSelector button[data-year]").forEach(function(b) {
+      b.classList.remove("multi-sel");
+    });
+    document.querySelector('#yearSelector button[data-year="' + curYear + '"]').classList.add("active");
+  }
+});
+
+// School selector
+document.getElementById("schoolSelect").addEventListener("change", function() { update(); if (multiMode) buildCompareChart(); });
+
+// View toggle
+document.querySelectorAll("#viewGroup button").forEach(function(b) {
+  b.addEventListener("click", function() {
+    document.querySelectorAll("#viewGroup button").forEach(function(x){x.classList.remove("active");});
+    this.classList.add("active");
+    update();
+    if (multiMode) buildCompareChart();
+  });
+});
+
+// Export
+document.querySelectorAll(".btn-export").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    var scale = parseInt(this.dataset.scale);
+    var el = document.getElementById("captureArea");
+    html2canvas(el, {
+      scale: scale,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false
+    }).then(function(canvas) {
+      var a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "dashboard_" + curYear + "_" + (scale === 4 ? "4k" : "hd") + ".png";
+      a.click();
+    }).catch(function(err) {
+      console.error(err);
+      alert("导出失败，请重试");
+    });
+  });
+});
+
+// Flip clock
+function _q(s,e){return(e||document).querySelectorAll(s);}
+function pad2(n){return n<10?"0"+n:""+n;}
+function pad3(n){return n<10?"00"+n:n<100?"0"+n:""+n;}
+function pad4(n){return n<10?"000"+n:n<100?"00"+n:n<1000?"0"+n:""+n;}
+function bjParts(d) {
+  var f=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Shanghai",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+  var p=f.formatToParts(d),r={};p.forEach(function(x){r[x.type]=x.value;});return r;
+}
+function bjDate(d) {
+  var r=bjParts(d);return new Date(parseInt(r.year),parseInt(r.month)-1,parseInt(r.day),parseInt(r.hour),parseInt(r.minute),parseInt(r.second));
+}
+function setClock(id,vals) {
+  var cards=_q(".fc",document.getElementById(id));
+  for(var i=0;i<cards.length;i++){
+    var d=vals.charAt(i);
+    var u=cards[i].querySelector(".fc-u");
+    var old=u.textContent;
+    if(old!==d&&!cards[i].classList.contains("flipping")){
+      cards[i].querySelector(".fc-d").textContent=d;
+      cards[i].querySelector(".fc-b").textContent=d;
+      void cards[i].offsetWidth;
+      cards[i].classList.add("flipping");
+    }
+  }
+}
+document.addEventListener("animationend",function(e){
+  if(e.animationName==="flipDown"){
+    var c=e.target.closest(".fc");
+    if(c){c.classList.remove("flipping");c.querySelector(".fc-u").textContent=c.querySelector(".fc-b").textContent;}
+  }
+});
+var _cb=document.getElementById("clockBlock");
+if(_cb){
+  var cdHTML='<div class="clock-row"><span class="cl">\u9ad8\u8003\u5012\u8ba1\u65f6</span>';
+  for(var i=0;i<3;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='<span class="fl">\u5929</span>';
+  for(var i=0;i<2;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='<span class="fs">:</span>';
+  for(var i=0;i<2;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='<span class="fs">:</span>';
+  for(var i=0;i<2;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='</div>';
+  cdHTML+='<div class="clock-row"><span class="cl">\u8ddd\u9ad8\u8003\u7ed3\u675f</span>';
+  for(var i=0;i<3;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='<span class="fl">\u5929</span>';
+  for(var i=0;i<2;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='<span class="fs">:</span>';
+  for(var i=0;i<2;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='<span class="fs">:</span>';
+  for(var i=0;i<2;i++)cdHTML+='<span class="fc"><span class="fc-u">0</span><span class="fc-b">0</span><span class="fc-d">0</span></span>';
+  cdHTML+='</div>';
+  _cb.innerHTML=cdHTML;
+  var crCdt=_q(".clock-row",_cb)[0];crCdt.id="crCdt";
+  var crEdt=_q(".clock-row",_cb)[1];crEdt.id="crEdt";
+  (function tick(){
+    var n=new Date();
+    var bn=bjDate(n);
+    var y=bn.getFullYear();
+    var t1=new Date(y,5,7,9,0,0);
+    if(bn>t1)t1=new Date(y+1,5,7,9,0,0);
+    var df1=Math.max(0,t1-bn);
+    setClock("crCdt",pad3(Math.floor(df1/86400000))+pad2(Math.floor((df1%86400000)/3600000))+pad2(Math.floor((df1%3600000)/60000))+pad2(Math.floor((df1%60000)/1000)));
+    var t2=new Date(y,5,9,18,15,0);
+    if(bn>t2)t2=new Date(y+1,5,9,18,15,0);
+    var df2=Math.max(0,t2-bn);
+    setClock("crEdt",pad3(Math.floor(df2/86400000))+pad2(Math.floor((df2%86400000)/3600000))+pad2(Math.floor((df2%3600000)/60000))+pad2(Math.floor((df2%60000)/1000)));
+    setTimeout(tick,1000-new Date().getMilliseconds()+50);
+  })();
+}
+
+window.addEventListener("resize", function() { 
+  if (!chartsInitialized) return;
+  SH.resize(); P1.resize(); P2.resize(); BR.resize(); CL.resize(); MJ.resize(); HM_WL.resize(); HM_LS.resize(); CP.resize(); 
+});
+
+// Init
+switchYear("2025").then(function() {
+  if(ld){ld.style.opacity="0";ld.style.transition="opacity .4s";setTimeout(function(){ld.style.display="none";},400);}
+});
+
+}catch(e){console.error(e);}
+})();
+</script>
+</body>
+</html>
