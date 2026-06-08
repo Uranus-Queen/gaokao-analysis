@@ -140,7 +140,7 @@ function initCharts() {
 // Fetch data for a year
 async function fetchYear(year) {
   if (DATA[year]) return DATA[year];
-  const resp = await fetch('/api/data/' + year);
+  const resp = await fetch('/data/' + year + '.json');
   const data = await resp.json();
   DATA[year] = data;
   return data;
