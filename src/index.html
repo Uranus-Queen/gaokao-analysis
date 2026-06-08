@@ -35,9 +35,13 @@
 </div>
 <div class="controls">
 <label>报考点：</label>
-<select id="schoolSelect">
-<option value="全部">全区（全部学校）</option>
-</select>
+<div class="dropdown-wrap" id="schoolDropdown">
+<div class="dropdown-selected" id="schoolSelected">全区（全部学校）</div>
+<ul class="dropdown-menu" id="schoolMenu">
+<li class="active" data-value="全部">全区（全部学校）</li>
+</ul>
+</div>
+<select id="schoolSelect" style="display:none"></select>
 <label>视图：</label>
 <div class="btn-group" id="viewGroup">
 <button class="active" data-view="院校层次">院校层次</button>
@@ -173,6 +177,21 @@ async function switchYear(year) {
   });
   if (prevVal !== "全部" && schools[prevVal]) sel.value = prevVal;
   else sel.value = "全部";
+
+  // Sync custom dropdown
+  var ddMenu = document.getElementById("schoolMenu");
+  var ddSelected = document.getElementById("schoolSelected");
+  ddMenu.innerHTML = '';
+  var allItems = [{value:'全部', text:'全区（全部学校）'}];
+  Object.keys(schools).sort().forEach(function(s) { allItems.push({value:s, text:s}); });
+  allItems.forEach(function(item) {
+    var li = document.createElement('li');
+    li.dataset.value = item.value;
+    li.textContent = item.text;
+    if (item.value === sel.value) { li.classList.add('active'); ddSelected.textContent = item.text; }
+    ddMenu.appendChild(li);
+  });
+  bindDropdownItems();
   
   initCharts();
   update();
@@ -485,6 +504,33 @@ document.getElementById("btnMulti").addEventListener("click", function() {
     document.querySelector('#yearSelector button[data-year="' + curYear + '"]').classList.add("active");
   }
 });
+
+// Custom dropdown
+var ddWrap = document.getElementById("schoolDropdown");
+var ddSelected = document.getElementById("schoolSelected");
+var ddMenu = document.getElementById("schoolMenu");
+
+ddSelected.addEventListener("click", function(e) {
+  e.stopPropagation();
+  ddWrap.classList.toggle("open");
+});
+
+function bindDropdownItems() {
+  ddMenu.querySelectorAll("li[data-value]").forEach(function(li) {
+    li.addEventListener("click", function(e) {
+      e.stopPropagation();
+      ddMenu.querySelectorAll("li.active").forEach(function(x){ x.classList.remove("active"); });
+      this.classList.add("active");
+      ddSelected.textContent = this.textContent;
+      document.getElementById("schoolSelect").value = this.dataset.value;
+      ddWrap.classList.remove("open");
+      document.getElementById("schoolSelect").dispatchEvent(new Event("change"));
+    });
+  });
+}
+bindDropdownItems();
+
+document.addEventListener("click", function() { ddWrap.classList.remove("open"); });
 
 // School selector
 document.getElementById("schoolSelect").addEventListener("change", function() { update(); if (multiMode) buildCompareChart(); });
